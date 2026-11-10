@@ -6,6 +6,7 @@ import express, { json, urlencoded } from 'express'
 import mongoose from 'mongoose'
 import path from 'path'
 import { DB_ADDRESS } from './config'
+import { doubleCsrfProtection } from './middlewares/csrf'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
@@ -25,6 +26,7 @@ app.use(urlencoded({ extended: true }))
 app.use(json())
 
 app.options('*', cors())
+app.use(doubleCsrfProtection)
 app.use(routes)
 app.use(errors())
 app.use(errorHandler)

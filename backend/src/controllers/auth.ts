@@ -8,6 +8,7 @@ import BadRequestError from '../errors/bad-request-error'
 import ConflictError from '../errors/conflict-error'
 import NotFoundError from '../errors/not-found-error'
 import UnauthorizedError from '../errors/unauthorized-error'
+import { generateCsrfToken } from '../middlewares/csrf'
 import User from '../models/user'
 
 // POST /auth/login
@@ -206,7 +207,14 @@ const updateCurrentUser = async (
     }
 }
 
+// GET /auth/csrf-token
+const getCsrfToken = (req: Request, res: Response) => {
+    res.set('Cache-Control', 'no-store')
+    res.json({ csrfToken: generateCsrfToken(req, res) })
+}
+
 export {
+    getCsrfToken,
     getCurrentUser,
     getCurrentUserRoles,
     login,
