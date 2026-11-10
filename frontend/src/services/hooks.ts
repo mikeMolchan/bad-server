@@ -17,18 +17,19 @@ import { AppDispatch, RootState } from './store'
 
 export const useDispatch = () => dispatchHook<AppDispatch>()
 export const useSelector: TypedUseSelectorHook<RootState> = selectorHook
-export const createAsyncThunk = createThunkHook.withTypes<{
+export type AppThunkConfig = {
     extra: WebLarekAPI
     state: RootState
     dispatch: AppDispatch
-}>()
+}
+export const createAsyncThunk = createThunkHook.withTypes<AppThunkConfig>()
 
 export const useActionCreators = <Actions extends ActionCreatorsMapObject>(
     actions: Actions
 ): BoundActions<Actions> => {
     const dispatch = useDispatch()
 
-    return useMemo(() => bindActionCreators(actions, dispatch), [])
+    return useMemo(() => bindActionCreators(actions, dispatch), [actions, dispatch])
 }
 
 export type BoundActions<Actions extends ActionCreatorsMapObject> = {

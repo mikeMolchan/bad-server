@@ -1,8 +1,12 @@
 import { AsyncThunk } from '@reduxjs/toolkit'
-import { useDispatch, useSelector } from '@store/hooks'
+import { AppThunkConfig, useDispatch, useSelector } from '@store/hooks'
 import { RootState } from '@store/store'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+
+interface PaginatedPayload {
+    pagination: { totalPages: number }
+}
 
 interface PaginationResult<_, U> {
     data: U[]
@@ -15,8 +19,8 @@ interface PaginationResult<_, U> {
     setLimit: (limit: number) => void
 }
 
-const usePagination = <T, U>(
-    asyncAction: AsyncThunk<T, Record<string, unknown>, any>,
+const usePagination = <T extends PaginatedPayload, U>(
+    asyncAction: AsyncThunk<T, Record<string, unknown>, AppThunkConfig>,
     selector: (state: RootState) => U[],
     defaultLimit: number
 ): PaginationResult<T, U> => {
@@ -32,9 +36,11 @@ const usePagination = <T, U>(
 
     const limit = Number(searchParams.get('limit')) || defaultLimit
 
-    const fetchData = async (params: Record<string, any>) => {
-        const response: any = await dispatch(asyncAction(params))
-        setTotalPages(response.payload.pagination.totalPages)
+    const fetchData = async (params: Record<string, unknown>) => {
+        const response = await dispatch(asyncAction(params))
+        if (asyncAction.fulfilled.match(response)) {
+            setTotalPages(response.payload.pagination.totalPages)
+        }
     }
 
     useEffect(() => {
@@ -44,10 +50,13 @@ const usePagination = <T, U>(
                 setPage(1)
             }
         })
+        // Запрос выполняется только при смене страницы, лимита или параметров
+        // адреса: fetchData, setPage и data пересоздаются при каждом рендере,
+        // и их добавление вызвало бы бесконечные перезапросы.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPage, limit, searchParams])
 
-    const updateURL = (newParams: Record<string, any>) => {
-        3
+    const updateURL = (newParams: Record<string, string | number | undefined>) => {
         const updatedParams = new URLSearchParams(searchParams)
         Object.entries(newParams).forEach(([key, value]) => {
             if (value !== undefined) {
