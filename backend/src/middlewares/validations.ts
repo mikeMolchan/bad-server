@@ -113,7 +113,7 @@ export const validateUserBody = celebrate({
             'string.min': 'Минимальная длина поля "name" - 2',
             'string.max': 'Максимальная длина поля "name" - 30',
         }),
-        password: Joi.string().min(6).required().messages({
+        password: Joi.string().min(6).max(72).required().messages({
             'string.empty': 'Поле "password" должно быть заполнено',
         }),
         email: Joi.string()
@@ -135,7 +135,7 @@ export const validateAuthentication = celebrate({
             .messages({
                 'string.required': 'Поле "email" должно быть заполнено',
             }),
-        password: Joi.string().required().messages({
+        password: Joi.string().max(72).required().messages({
             'string.empty': 'Поле "password" должно быть заполнено',
         }),
     }),
