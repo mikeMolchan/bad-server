@@ -53,16 +53,50 @@ class Api {
                   )
     }
 
-    protected async request<T>(endpoint: string, options: RequestInit) {
-        try {
-            const res = await fetch(`${this.baseUrl}${endpoint}`, {
-                ...this.options,
-                ...options,
+    private csrfToken: string | null = null
+
+    private async getCsrfToken(): Promise<string> {
+        let token = this.csrfToken
+        if (!token) {
+            const res = await fetch(`${this.baseUrl}/auth/csrf-token`, {
+                credentials: 'include',
             })
-            return await this.handleResponse<T>(res)
-        } catch (error) {
-            return Promise.reject(error)
+            const data = await this.handleResponse<{ csrfToken: string }>(res)
+            token = data.csrfToken
+            this.csrfToken = token
         }
+        return token
+    }
+
+    protected async request<T>(
+        endpoint: string,
+        options: RequestInit,
+        isRetry = false
+    ): Promise<T> {
+        const isSafeMethod = ['GET', 'HEAD', 'OPTIONS'].includes(
+            (options.method ?? 'GET').toUpperCase()
+        )
+        const headers = new Headers(options.headers ?? this.options.headers)
+        if (!isSafeMethod) {
+            headers.set('X-CSRF-Token', await this.getCsrfToken())
+        }
+        const res = await fetch(`${this.baseUrl}${endpoint}`, {
+            ...this.options,
+            ...options,
+            headers,
+            credentials: 'include',
+        })
+        if (res.status === 403 && !isSafeMethod && !isRetry) {
+            const body = await res
+                .clone()
+                .json()
+                .catch(() => null)
+            if (body?.message === 'invalid csrf token') {
+                this.csrfToken = null
+                return this.request<T>(endpoint, options, true)
+            }
+        }
+        return this.handleResponse<T>(res)
     }
 
     private refreshToken = () => {
@@ -78,7 +112,7 @@ class Api {
     ) => {
         try {
             return await this.request<T>(endpoint, options)
-        } catch (error) {
+        } catch {
             const refreshData = await this.refreshToken()
             if (!refreshData.success) {
                 return Promise.reject(refreshData)
@@ -293,7 +327,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
 
     logoutUser = () => {
         return this.request<ServerResponse<unknown>>('/auth/logout', {
-            method: 'GET',
+            method: 'POST',
             credentials: 'include',
         })
     }

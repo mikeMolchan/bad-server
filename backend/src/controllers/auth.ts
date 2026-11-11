@@ -8,7 +8,9 @@ import BadRequestError from '../errors/bad-request-error'
 import ConflictError from '../errors/conflict-error'
 import NotFoundError from '../errors/not-found-error'
 import UnauthorizedError from '../errors/unauthorized-error'
+import { generateCsrfToken } from '../middlewares/csrf'
 import User from '../models/user'
+import pickUserUpdate from '../utils/pickUserUpdate'
 
 // POST /auth/login
 const login = async (req: Request, res: Response, next: NextFunction) => {
@@ -165,15 +167,13 @@ const refreshAccessToken = async (
 }
 
 const getCurrentUserRoles = async (
-    req: Request,
+    _req: Request,
     res: Response,
     next: NextFunction
 ) => {
     const userId = res.locals.user._id
     try {
-        await User.findById(userId, req.body, {
-            new: true,
-        }).orFail(
+        await User.findById(userId).orFail(
             () =>
                 new NotFoundError(
                     'Пользователь по заданному id отсутствует в базе'
@@ -192,7 +192,7 @@ const updateCurrentUser = async (
 ) => {
     const userId = res.locals.user._id
     try {
-        const updatedUser = await User.findByIdAndUpdate(userId, req.body, {
+        const updatedUser = await User.findByIdAndUpdate(userId, pickUserUpdate(req.body), {
             new: true,
         }).orFail(
             () =>
@@ -206,7 +206,14 @@ const updateCurrentUser = async (
     }
 }
 
+// GET /auth/csrf-token
+const getCsrfToken = (req: Request, res: Response) => {
+    res.set('Cache-Control', 'no-store')
+    res.json({ csrfToken: generateCsrfToken(req, res) })
+}
+
 export {
+    getCsrfToken,
     getCurrentUser,
     getCurrentUserRoles,
     login,

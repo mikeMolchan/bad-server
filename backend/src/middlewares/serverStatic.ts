@@ -1,24 +1,27 @@
 import { NextFunction, Request, Response } from 'express'
-import fs from 'fs'
-import path from 'path'
 
 export default function serveStatic(baseDir: string) {
     return (req: Request, res: Response, next: NextFunction) => {
-        // Определяем полный путь к запрашиваемому файлу
-        const filePath = path.join(baseDir, req.path)
-
-        // Проверяем, существует ли файл
-        fs.access(filePath, fs.constants.F_OK, (err) => {
-            if (err) {
-                // Файл не существует отдаем дальше мидлварам
-                return next()
-            }
-            // Файл существует, отправляем его клиенту
-            return res.sendFile(filePath, (err) => {
-                if (err) {
-                    next(err)
+        if (
+            (req.method !== 'GET' && req.method !== 'HEAD') ||
+            /^\/temp(\/|$)/i.test(req.path)
+        ) {
+            return next()
+        }
+        return res.sendFile(
+            req.path,
+            { root: baseDir, dotfiles: 'deny', maxAge: '1d' },
+            (error) => {
+                if (!error || res.headersSent) {
+                    return
                 }
-            })
-        })
+                const { status } = error as { status?: number }
+                if (status === 403 || status === 404) {
+                    next()
+                } else {
+                    next(error)
+                }
+            }
+        )
     }
 }
