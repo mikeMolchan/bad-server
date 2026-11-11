@@ -15,3 +15,5 @@ docker compose up -d
 ## Ссылка на репозиторий
 https://github.com/mikeMolchan/bad-server
 
+## Имя, номер когорты и курс
+Михаил Молчан, когорта wff-cohort-39, курс "Фулстек-разработчик"
