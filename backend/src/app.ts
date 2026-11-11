@@ -5,27 +5,32 @@ import 'dotenv/config'
 import express, { json, urlencoded } from 'express'
 import mongoose from 'mongoose'
 import path from 'path'
-import { DB_ADDRESS } from './config'
+import { DB_ADDRESS, ORIGIN_ALLOW } from './config'
 import { doubleCsrfProtection } from './middlewares/csrf'
 import errorHandler from './middlewares/error-handler'
+import rateLimiter from './middlewares/rate-limit'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
 
 const { PORT = 3000 } = process.env
 const app = express()
+const corsOptions = { origin: ORIGIN_ALLOW, credentials: true }
+
+app.disable('x-powered-by')
+app.set('trust proxy', 1)
 
 app.use(cookieParser())
 
-app.use(cors())
-// app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }));
-// app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors(corsOptions))
 
 app.use(serveStatic(path.join(__dirname, 'public')))
 
-app.use(urlencoded({ extended: true }))
-app.use(json())
+app.use(rateLimiter)
 
-app.options('*', cors())
+app.use(urlencoded({ extended: true, limit: '100kb' }))
+app.use(json({ limit: '100kb' }))
+
+app.options('*', cors(corsOptions))
 app.use(doubleCsrfProtection)
 app.use(routes)
 app.use(errors())

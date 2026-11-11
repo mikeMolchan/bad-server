@@ -1,3 +1,4 @@
+import { sanitizeComment } from '../../utils/sanitize'
 import OpenInNewIcon from '@assets/open_in_new.svg?react'
 import Button from '@components/button'
 import DetailInfo from '@components/detail-info'
@@ -103,7 +104,7 @@ export default function AdminOrderDetail() {
                     <>
                         <div
                             dangerouslySetInnerHTML={{
-                                __html: dataInfo.comment,
+                                __html: sanitizeComment(dataInfo.comment),
                             }}
                         />
                     </>

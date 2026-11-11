@@ -5,6 +5,7 @@ import ms from 'ms'
 export const { PORT = '3000' } = process.env
 export const { DB_ADDRESS = 'mongodb://127.0.0.1:27017/weblarek' } = process.env
 export const { JWT_SECRET = 'JWT_SECRET' } = process.env
+export const { ORIGIN_ALLOW = 'http://localhost:5173' } = process.env
 export const CSRF_SECRET =
     process.env.CSRF_SECRET || randomBytes(32).toString('hex')
 export const ACCESS_TOKEN = {
